@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import ParticlesBg from 'particles-bg'
+import Clarifai from 'clarifai';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import Navigation from './components/Navigation/Navigation';
 import Signin from './components/Signin/Signin';
@@ -9,20 +10,14 @@ import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
 import './App.css';
 
+const app = new Clarifai.App({
+ apiKey: 'a356ddd4fa9f4230aae8e70bdc81d082'
+});
 
-// const particlesOptions = {
-//   particles: {
-//     number: {
-//       value: 30,
-//       density: {
-//         enable: true,
-//         value_area: 800
-//       }
-//     }
-//   }
-// }
-
-const initialState = {
+class App extends Component {
+  constructor() {
+    super();
+    this.state = {
       input: '',
       imageUrl: '',
       box: {},
@@ -36,11 +31,6 @@ const initialState = {
         joined: ''
       }
     }
-
-class App extends Component {
-  constructor() {
-    super();
-    this.state = initialState;
   }
 
   loadUser = (data) => {
@@ -76,15 +66,10 @@ class App extends Component {
 
   onButtonSubmit = () => {
     this.setState({imageUrl: this.state.input});
-      fetch('http://localhost:3000/imageurl', {
-            method: 'post',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              input: this.state.input
-            })
-          })
-      .then(response => response.json()) 
+
+    app.models.predict('face-detection', this.state.input)
       .then(response => {
+        console.log('hi', response)
         if (response) {
           fetch('http://localhost:3000/image', {
             method: 'put',
@@ -97,7 +82,6 @@ class App extends Component {
             .then(count => {
               this.setState(Object.assign(this.state.user, { entries: count}))
             })
-            .catch(console.log)
 
         }
         this.displayFaceBox(this.calculateFaceLocation(response))
@@ -118,7 +102,7 @@ class App extends Component {
     const { isSignedIn, imageUrl, route, box } = this.state;
     return (
       <div className="App">
-           <ParticlesBg type="circle" bg={true} />
+        <ParticlesBg type="fountain" bg={true} />
         <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
         { route === 'home'
           ? <div>
